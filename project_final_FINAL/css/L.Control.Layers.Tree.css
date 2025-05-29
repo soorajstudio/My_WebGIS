@@ -1,0 +1,149 @@
+/* Toggle button for named layer tree */
+.leaflet-control-layers-toggle.leaflet-layerstree-named-toggle {
+    margin: 4px 8px;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+.leaflet-control-layers-toggle.leaflet-layerstree-named-toggle:hover {
+    background-color: #1978cf;
+    border-radius: 4px;
+}
+
+/* Layer list font and spacing */
+.leaflet-control-layers-list {
+    font: 15px / 1.7 "Helvetica Neue", Arial, Helvetica, sans-serif;
+    color: #333;
+    user-select: none;
+    padding: 1px 5px;
+    background: #fafafa;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(25, 120, 207, 0.15);
+}
+
+/* Layer tree node container */
+.leaflet-layerstree-node {
+    margin: 4px 0;
+}
+
+/* Remove margin on header inputs for neat alignment */
+.leaflet-layerstree-header input {
+    margin-left: 0;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+/* Header container styling */
+.leaflet-layerstree-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font: 15px / 1.7 "Helvetica Neue", Arial, Helvetica, sans-serif;
+    font-weight: 500;
+}
+
+/* Pointer cursor for expandable headers */
+.leaflet-layerstree-header-pointer {
+    cursor: pointer;
+    color: #1978cf;
+    font-weight: 500;
+    user-select: none;
+    transition: color 0.3s ease;
+}
+.leaflet-layerstree-header-pointer:hover {
+    color: #0f4a8c;
+}
+
+/* Labels inside headers */
+.leaflet-layerstree-header label {
+    display: inline-block;
+    cursor: pointer;
+    font-weight: 500;
+    color: #444;
+    text-decoration: none;
+    user-select: none;
+    transition: color 0.3s ease;
+    font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+}
+.leaflet-layerstree-header label:hover {
+    color: #1978cf;
+}
+
+/* Padding for header names */
+.leaflet-layerstree-header-name {
+    padding-left: 4px;
+    flex-grow: 1;
+    font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    font-weight: 500;
+}
+
+/* Space helper if needed */
+.leaflet-layerstree-header-space {
+    flex-grow: 1;
+}
+
+/* Children node indentation */
+.leaflet-layerstree-children {
+    padding-left: 24px;
+    margin-top: 2px;
+    font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    font-weight: 500;
+}
+
+/* Children with no padding */
+.leaflet-layerstree-children-nopad {
+    padding-left: 0;
+}
+
+/* Hide nodes */
+.leaflet-layerstree-hide,
+.leaflet-layerstree-nevershow {
+    display: none !important;
+}
+
+/* Expand/Collapse icon styling */
+.leaflet-layerstree-expand-collapse {
+    cursor: pointer;
+    user-select: none;
+    font-weight: 500;
+    color: #1978cf;
+    transition: color 0.3s ease;
+    font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+    font-size: 15px;
+}
+.leaflet-layerstree-expand-collapse:hover {
+    color: #0f4a8c;
+}
+
+/* Hover effect on the entire row */
+.leaflet-layerstree-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background-color 0.3s ease;
+}
+
+/* On hover: apply background and cursor change to full row */
+.leaflet-layerstree-header:hover {
+    background-color: rgba(25, 120, 207, 0.1); /* light blue tint */
+    cursor: pointer;
+}
+
+.leaflet-layerstree-header input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    transform: scale(0.85); /* alternative method to scale */
+}
+

@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="css/leaflet.css">
+    <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+    <link rel="stylesheet" href="css/L.Control.Locate.min.css">
+    <link rel="stylesheet" href="css/qgis2web.css">
+    <link rel="stylesheet" href="css/fontawesome-all.min.css">
+    <link rel="stylesheet" href="css/leaflet-search.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+ 
+        .alert-container {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-message {
+            background-color: #ff4444;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .mute-button {
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .mute-button:hover {
+            background-color: #555;
+        }
+
+        .leaflet-control-locate a {
+            font-size: 1.4em;
+        }
+
+        .leaflet-control-northarrow {
+    position: absolute;
+    top: 165px;
+    right: 0px;
+    background: transparent;
+    border-radius: 10px;
+    padding: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.leaflet-control-northarrow img {
+    width: 30px;
+    height: auto;
+    display: block;
+}
+
+/* Hover Effect with White Background Shade */
+.leaflet-control-northarrow:hover {
+    background-color: rgba(255, 255, 255, 0.336); /* semi-transparent white */
+}
+
+
+        .location-controls {
+            position: absolute;
+            top: 130px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .track-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10%;
+            width: 35px;
+            height: 35px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .track-button:hover {
+            background-color: #45a049;
+        }
+
+        .track-button.active {
+            background-color: #f44336;
+        }
+
+        .track-button.disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .custom-popup {
+            padding: 10px;
+            font-family: Arial, sans-serif;
+        }
+
+        .custom-popup h3 {
+            margin-top: 0;
+            color: #ff4444;
+        }
+
+        .custom-popup button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .custom-popup button:hover {
+            background-color: #45a049;
+        }
+    </style>
+    <title>School Zone Alert System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="alert-container">
+        <div id="alertMessage" class="alert-message">🚸 SCHOOL ZONE ALERT: Vehicle has entered the school zone!</div>
+        <button id="muteButton" class="mute-button" title="Mute Alert Sound">
+            <i class="fas fa-volume-up"></i>
+        </button>
+    </div>
+
+    <div class="location-controls">
+        <button id="trackLocationBtn" class="track-button disabled" title="Please locate yourself first" disabled>
+            <i class="fas fa-location-arrow"></i>
+        </button>
+    </div>
+
+    <script src="js/qgis2web_expressions.js"></script>
+    <script src="js/leaflet.js"></script>
+    <script src="js/L.Control.Layers.Tree.min.js"></script>
+    <script src="js/L.Control.Locate.min.js"></script>
+    <script src="js/leaflet.rotatedMarker.js"></script>
+    <script src="js/leaflet.pattern.js"></script>
+    <script src="js/leaflet-hash.js"></script>
+    <script src="js/Autolinker.min.js"></script>
+    <script src="js/rbush.min.js"></script>
+    <script src="js/labelgun.min.js"></script>
+    <script src="js/labels.js"></script>
+    <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
+    <script src="js/leaflet-search.js"></script>
+    <script src="data/TCR_CORP_ROADS_1.js"></script>
+    <script src="data/schoolbuffercool_2.js"></script>
+    <script src="data/schoolpointsfinal_3.js"></script>
+    <script src="js/highlightLayer.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var blueIcon = L.icon({
+            iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        var redIcon = L.icon({
+            iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        var insideBuffer = false;
+        var soundEnabled = true;
+        var alertSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
+        var soundInterval = null;
+        var alertMessage = document.getElementById('alertMessage');
+        var muteButton = document.getElementById('muteButton');
+        var trackLocationBtn = document.getElementById('trackLocationBtn');
+        var isTracking = false;
+        var watchId = null;
+        var locationFound = false;
+
+        var mapCenter = map.getCenter();
+        var vehicleMarker = L.marker([mapCenter.lat, mapCenter.lng], {
+            draggable: true,
+            title: "Vehicle Location",
+            icon: blueIcon,
+            opacity: 1
+        }).addTo(map);
+
+        L.Control.NorthArrow = L.Control.extend({
+            onAdd: function(map) {
+                var container = L.DomUtil.create('div', 'leaflet-control-northarrow');
+                container.innerHTML = '<img src="compass.png" alt="North Arrow">';
+                return container;
+            }
+        });
+
+        L.control.northArrow = function(opts) {
+            return new L.Control.NorthArrow(opts);
+        };
+
+        L.control.northArrow({ position: 'topright' }).addTo(map);
+
+        var locateControl = document.querySelector('.leaflet-control-locate a');
+        if (locateControl) {
+            locateControl.addEventListener('click', function() {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        locationFound = true;
+                        trackLocationBtn.classList.remove('disabled');
+                        trackLocationBtn.disabled = false;
+                        trackLocationBtn.title = "Track My Location";
+                    },
+                    function(error) {
+                        locationFound = false;
+                        trackLocationBtn.classList.add('disabled');
+                        trackLocationBtn.disabled = true;
+                        trackLocationBtn.title = "Please locate yourself first";
+                        showCustomPopup("Location Error", "Location access denied or unavailable.");
+                    }
+                );
+            });
+        }
+        map.attributionControl.setPrefix(false);
+
+        trackLocationBtn.addEventListener('click', function() {
+            if (!locationFound) {
+                showCustomPopup("Location Required", "Please use the locate button (crosshair icon) first.");
+                return;
+            }
+
+            if (isTracking) {
+                stopTracking();
+            } else {
+                startTracking();
+            }
+        });
+
+        function startTracking() {
+            if (navigator.geolocation) {
+                isTracking = true;
+                trackLocationBtn.classList.add('active');
+                trackLocationBtn.title = "Stop Tracking";
+                vehicleMarker.dragging.disable();
+
+                watchId = navigator.geolocation.watchPosition(
+                    updateVehiclePosition,
+                    handleLocationError,
+                    {
+                        enableHighAccuracy: true,
+                        maximumAge: 10000,
+                        timeout: 5000
+                    }
+                );
+            }
+        }
+
+        function stopTracking() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            isTracking = false;
+            trackLocationBtn.classList.remove('active');
+            trackLocationBtn.title = "Track My Location";
+            vehicleMarker.dragging.enable();
+        }
+
+        function updateVehiclePosition(position) {
+            var lat = position.coords.latitude;
+            var lng = position.coords.longitude;
+            vehicleMarker.setLatLng([lat, lng]);
+            checkInsideBuffer();
+        }
+
+        function handleLocationError(error) {
+            locationFound = false;
+            trackLocationBtn.classList.add('disabled');
+            trackLocationBtn.disabled = true;
+            trackLocationBtn.title = "Please locate yourself first";
+
+            var errorMessage;
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage = "Location access denied. Please enable it in browser settings.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage = "Location info unavailable. Check GPS and network.";
+                    break;
+                case error.TIMEOUT:
+                    errorMessage = "Request to get location timed out.";
+                    break;
+                default:
+                    errorMessage = "Unknown error getting location.";
+            }
+
+            showCustomPopup("Location Error", errorMessage);
+            stopTracking();
+        }
+
+        function showCustomPopup(title, message) {
+            L.popup()
+                .setLatLng(vehicleMarker.getLatLng())
+                .setContent(`<div class="custom-popup"><h3>${title}</h3><p>${message}</p></div>`)
+                .openOn(map);
+        }
+
+        muteButton.addEventListener('click', function() {
+            soundEnabled = !soundEnabled;
+            updateMuteButton();
+            if (!soundEnabled) stopAlertSound();
+            else if (insideBuffer) playAlertSound();
+        });
+
+        function updateMuteButton() {
+            muteButton.innerHTML = soundEnabled ? '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-volume-mute"></i>';
+            muteButton.title = soundEnabled ? "Mute Alert Sound" : "Unmute Alert Sound";
+        }
+
+        vehicleMarker.on('dragend', function() {
+            if (!isTracking) checkInsideBuffer();
+        });
+
+        function styleBufferZones() {
+            if (typeof layer_schoolbuffercool_2 !== 'undefined') {
+                layer_schoolbuffercool_2.setStyle({
+                    fillColor: 'transparent',
+                    fillOpacity: 0,
+                    weight: 2
+                });
+                if (map.hasLayer(layer_schoolbuffercool_2)) {
+                    map.removeLayer(layer_schoolbuffercool_2);
+                    map.addLayer(layer_schoolbuffercool_2);
+                }
+            }
+        }
+
+        styleBufferZones();
+
+        function playAlertSound() {
+            if (!soundEnabled) return;
+            stopAlertSound();
+            alertSound.play();
+            soundInterval = setInterval(() => {
+                alertSound.currentTime = 0;
+                alertSound.play();
+            }, 1000);
+        }
+
+        function stopAlertSound() {
+            if (soundInterval) clearInterval(soundInterval);
+            alertSound.pause();
+            alertSound.currentTime = 0;
+        }
+
+        function showAlert() {
+            alertMessage.style.display = 'block';
+            muteButton.style.display = 'block';
+        }
+
+        function hideAlert() {
+            alertMessage.style.display = 'none';
+            muteButton.style.display = 'none';
+        }
+
+        function checkInsideBuffer() {
+            var point = turf.point([vehicleMarker.getLatLng().lng, vehicleMarker.getLatLng().lat]);
+            var found = false;
+
+            layer_schoolbuffercool_2.eachLayer(layer => {
+                var polygon = layer.toGeoJSON();
+                if (turf.booleanPointInPolygon(point, polygon)) {
+                    found = true;
+                }
+            });
+
+            if (found && !insideBuffer) {
+                insideBuffer = true;
+                vehicleMarker.setIcon(redIcon);
+                soundEnabled = true;
+                updateMuteButton();
+                playAlertSound();
+                showAlert();
+            } else if (!found && insideBuffer) {
+                insideBuffer = false;
+                vehicleMarker.setIcon(blueIcon);
+                stopAlertSound();
+                hideAlert();
+            }
+        }
+
+        setInterval(checkInsideBuffer, 500);
+    });
+    </script>
+</body>
+</html>

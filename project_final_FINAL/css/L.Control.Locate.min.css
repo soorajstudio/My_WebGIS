@@ -1,0 +1,18 @@
+.leaflet-control-locate a {
+  font-size: 1.4em;
+  color: #444;
+}
+.leaflet-control-locate.active a {
+  color: #2074b6;
+}
+.leaflet-control-locate.active.following a {
+  color: #fc8428;
+}
+/*# sourceMappingURL=L.Control.Locate.min.css.map */
+.leaflet-top .leaflet-control-locate {
+  margin-top: 75px; /* This is usually safer and works better with other controls */
+}
+/* Move the locate icon 50px down from the top */
+.leaflet-top .leaflet-control-locate {
+  margin-top: 10px;
+}
